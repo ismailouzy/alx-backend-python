@@ -11,11 +11,8 @@ from utils import access_nested_map, get_json, memoize
 class TestAccessNestedMap(unittest.TestCase):
     """Tests for access_nested_map function."""
 
-    @parameterized.expand([
-        ({"a": 1}, ("a",), 1),
-        ({"a": {"b": 2}}, ("a",), {"b": 2}),
-        ({"a": {"b": 2}}, ("a", "b"), 2),
-    ])
+    @parameterized.expand([({"a": 1}, ("a",), 1), ({"a": {
+        "b": 2}}, ("a",), {"b": 2}), ({"a": {"b": 2}}, ("a", "b"), 2)])
     def test_access_nested_map(
             self, nested_map: Dict,
             path: Tuple[str],
@@ -24,7 +21,4 @@ class TestAccessNestedMap(unittest.TestCase):
         """Test access_nested_map returns correct output."""
         self.assertEqual(access_nested_map(nested_map, path), expected)
 
-    @parameterized.expand([
-        ({}, ("a",), KeyError),
-        ({"a": 1}, ("a", "b"), KeyError),
-    ])
+    @parameterized.expand([({}, ("a",)), ({"a": 1}, ("a", "b"))])
