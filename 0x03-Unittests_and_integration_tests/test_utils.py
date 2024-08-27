@@ -26,6 +26,3 @@ class TestAccessNestedMap(unittest.TestCase):
         ({}, ("a",), KeyError),
         ({"a": 1}, ("a", "b"), KeyError),
     ])
-
-if __name__ == '__main__':
-    unittest.main()
