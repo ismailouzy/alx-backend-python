@@ -1,5 +1,6 @@
 import mysql.connector
 from mysql.connector import Error
+import sys
 
 def stream_users_in_batches(batch_size):
     """Generator function that streams rows from user_data table in batches"""
@@ -44,7 +45,7 @@ def batch_processing(batch_size):
     """Processes batches of users and filters those over age 25"""
     for batch in stream_users_in_batches(batch_size):
         # Filter users over 25
-        filtered_users = [user for user in batch if user['age'] > 25]
+        filtered_users = (user for user in batch if user['age'] > 25)
         
         # Yield each filtered user one by one
         for user in filtered_users:
