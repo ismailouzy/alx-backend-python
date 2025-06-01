@@ -28,21 +28,24 @@ class TestGithubOrgClient(unittest.TestCase):
         """Ensure _public_repos_url property returns the correct URL."""
         with patch.object(GithubOrgClient, 'org',
                           new_callable=PropertyMock) as mock_org:
-            mock_org.return_value = {"repos_url": "https://api.github.com/orgs/test/repos"}
+            mock_org.return_value = {
+                    "repos_url": "https://api.github.com/orgs/test/repos"}
             client = GithubOrgClient("test")
             self.assertEqual(client._public_repos_url,
                              "https://api.github.com/orgs/test/repos")
 
     @patch('client.get_json')
     def test_public_repos(self, mock_get_json):
-        """Validate that public_repos method returns the correct list of repos."""
+        """Validate that public_repos method returns the correct list of repos.
+        """
         mock_get_json.return_value = [
             {"name": "repo1"},
             {"name": "repo2"}
         ]
         with patch.object(GithubOrgClient, '_public_repos_url',
                           new_callable=PropertyMock) as mock_public_repos_url:
-            mock_public_repos_url.return_value = "https://api.github.com/orgs/test/repos"
+            mock_public_repos_url.return_value = "https://api.github.com/orgs/\
+            test/repos"
             client = GithubOrgClient("test")
             repos = client.public_repos()
             self.assertEqual(repos, ["repo1", "repo2"])
@@ -54,8 +57,10 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {"key": "apache-2.0"}}, "mit", False)
     ])
     def test_has_license(self, repo, license_key, expected):
-        """Check if has_license correctly identifies the presence of a license."""
-        self.assertEqual(GithubOrgClient.has_license(repo, license_key), expected)
+        """Check if has_license correctly identifies the presence of a license.
+        """
+        self.assertEqual(GithubOrgClient.has_license(repo, license_key),
+                         expected)
 
 
 @parameterized_class(
