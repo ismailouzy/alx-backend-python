@@ -3,12 +3,14 @@ from collections import defaultdict
 from datetime import datetime, time
 import logging
 
-open('requests.log', 'a').close()
 logger = logging.getLogger(__name__)
 
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
-        self.get_response = get_response
+    	self.get_response = get_response
+    	# Ensure log file exists
+    	with open('requests.log', 'a') as f:
+        	f.write(f"Log started at {datetime.now()}\n")
 
     def __call__(self, request):
         user = request.user.username if request.user.is_authenticated else "Anonymous"
