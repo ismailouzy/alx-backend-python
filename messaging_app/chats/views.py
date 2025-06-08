@@ -49,15 +49,14 @@ class ConversationViewSet(viewsets.ModelViewSet):
             status=status.HTTP_403_FORBIDDEN
         )
 
-
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated, IsParticipantOfConversation]
     pagination_class = MessagePagination
     filter_backends = [
-        filters.OrderingFilter,
         django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
         filters.SearchFilter
     ]
     filterset_class = MessageFilter
@@ -66,38 +65,14 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Only show messages from conversations the user is in
-        queryset = super().get_queryset()
-        return queryset.filter(
-            Q(conversation__participants=self.request.user) |
-            Q(sender=self.request.user)
-        ).distinct()
+        return Message.objects.filter(
+            conversation__participants=self.request.user
+        ).select_related('sender', 'conversation')
 
-    def create(self, request, *args, **kwargs):
-        conversation_id = request.data.get('conversation')
+    def perform_create(self, serializer):
+        conversation = serializer.validated_data['conversation']
+        if not conversation.participants.filter(id=self.request.user.id).exists():
+            raise PermissionDenied("You're not a participant of this conversation")
+        serializer.save(sender=self.request.user)
 
-        # Check if user is participant of the conversation
-        if not Conversation.objects.filter(
-            id=conversation_id,
-            participants=request.user
-        ).exists():
-            return Response(
-                {"error": "You are not a participant of this conversation"},
-                status=status.HTTP_403_FORBIDDEN
-            )
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(sender=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def perform_destroy(self, instance):
-        # Only allow deletion by sender or conversation participants
-        if instance.sender != self.request.user and not instance.conversation.participants.filter(
-            id=self.request.user.id
-        ).exists():
-            return Response(
-                {"error": "You don't have permission to delete this message"},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
