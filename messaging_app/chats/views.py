@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from .permissions import IsParticipantOfConversation
@@ -9,25 +10,24 @@ from .filters import MessageFilter
 import django_filters
 from django.db.models import Q
 
-
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()
     serializer_class = ConversationSerializer
-    filter_backends = [filters.SearchFilter, django_filters.rest_framework.DjangoFilterBackend]
     permission_classes = [IsAuthenticated, IsParticipantOfConversation]
+    filter_backends = [filters.SearchFilter]
     search_fields = ['participants__username']
 
     def get_queryset(self):
-        # Only show conversations where the user is a participant
+        # Only show conversations where user is a participant
         return self.queryset.filter(participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
         participants = request.data.get("participants", [])
-
-        # Ensure the current user is included in the conversation
+        
+        # Ensure current user is included
         if request.user.id not in participants:
             participants.append(request.user.id)
-
+            
         if len(participants) < 2:
             return Response(
                 {"error": "At least two participants are required"},
@@ -38,16 +38,6 @@ class ConversationViewSet(viewsets.ModelViewSet):
         conversation.participants.set(participants)
         serializer = self.get_serializer(conversation)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def perform_destroy(self, instance):
-        # Only allow deletion if user is participant
-        if instance.participants.filter(id=self.request.user.id).exists():
-            instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-            {"error": "You are not a participant of this conversation"},
-            status=status.HTTP_403_FORBIDDEN
-        )
 
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
@@ -64,15 +54,42 @@ class MessageViewSet(viewsets.ModelViewSet):
     search_fields = ['content']
 
     def get_queryset(self):
-        # Only show messages from conversations the user is in
-        return Message.objects.filter(
+        # Get conversation_id from query params if provided
+        conversation_id = self.request.query_params.get('conversation_id')
+        
+        # Base queryset - only messages in conversations where user is participant
+        queryset = Message.objects.filter(
             conversation__participants=self.request.user
         ).select_related('sender', 'conversation')
+        
+        # Filter by conversation_id if provided
+        if conversation_id:
+            queryset = queryset.filter(conversation_id=conversation_id)
+            
+        return queryset
 
     def perform_create(self, serializer):
-        conversation = serializer.validated_data['conversation']
+        conversation = serializer.validated_data.get('conversation')
+        
+        # Verify user is participant of the conversation
         if not conversation.participants.filter(id=self.request.user.id).exists():
             raise PermissionDenied("You're not a participant of this conversation")
+            
         serializer.save(sender=self.request.user)
 
+    def perform_update(self, serializer):
+        message = self.get_object()
+        
+        # Only allow sender to update their own messages
+        if message.sender != self.request.user:
+            raise PermissionDenied("You can only edit your own messages")
+            
+        serializer.save()
 
+    def perform_destroy(self, instance):
+        # Only allow sender or conversation participants to delete
+        if instance.sender != self.request.user and \
+           not instance.conversation.participants.filter(id=self.request.user.id).exists():
+            raise PermissionDenied("You don't have permission to delete this message")
+            
+        instance.delete()
