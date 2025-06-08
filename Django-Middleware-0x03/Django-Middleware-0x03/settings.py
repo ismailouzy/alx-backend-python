@@ -73,7 +73,7 @@ REST_FRAMEWORK = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'chats.middleware.RolePermissionMiddleware',
+    'chats.middleware.RolepermissionMiddleware',
     'chats.middleware.OffensiveLanguageMiddleware',
     'chats.middleware.RestrictAccessByTimeMiddleware',
     'chats.middleware.RequestLoggingMiddleware',

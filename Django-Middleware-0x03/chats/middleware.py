@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import datetime, time
 import logging
 
+open('requests.log', 'a').close()
 logger = logging.getLogger(__name__)
 
 class RequestLoggingMiddleware:
@@ -66,7 +67,7 @@ class OffensiveLanguageMiddleware:
         return self.get_response(request)
 
 
-class RolePermissionMiddleware:
+class RolepermissionMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
