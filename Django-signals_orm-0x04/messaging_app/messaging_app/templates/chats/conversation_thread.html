@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Conversation</title>
+</head>
+<body>
+    <h1>Conversation with {{ parent_message.sender.username }}</h1>
+    
+    <div>
+        <p><strong>{{ parent_message.sender.username }}:</strong> {{ parent_message.content }}</p>
+        <small>{{ parent_message.timestamp }}</small>
+        {% if parent_message.edited %}<small>(edited)</small>{% endif %}
+    </div>
+    
+    <h2>Replies</h2>
+    {% for reply in parent_message.replies.all %}
+    <div style="margin-left: 20px;">
+        <p><strong>{{ reply.sender.username }}:</strong> {{ reply.content }}</p>
+        <small>{{ reply.timestamp }}</small>
+        {% if reply.edited %}<small>(edited)</small>{% endif %}
+    </div>
+    {% empty %}
+    <p>No replies yet</p>
+    {% endfor %}
+    
+    <a href="{% url 'inbox' %}">Back to Inbox</a>
+</body>
+</html>

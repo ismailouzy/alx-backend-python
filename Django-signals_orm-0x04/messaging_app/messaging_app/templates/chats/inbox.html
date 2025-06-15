@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inbox</title>
+</head>
+<body>
+    <h1>Your Inbox</h1>
+    
+    <h2>Unread Messages ({{ unread_messages.count }})</h2>
+    <ul>
+        {% for message in unread_messages %}
+        <li>
+            <a href="{% url 'conversation_thread' message.id %}">
+                From {{ message.sender.username }}: {{ message.content|truncatechars:50 }}
+            </a>
+        </li>
+        {% empty %}
+        <li>No unread messages</li>
+        {% endfor %}
+    </ul>
+    
+    <h2>All Conversations</h2>
+    <ul>
+        {% for conversation in conversations %}
+        <li>
+            <a href="{% url 'conversation_thread' conversation.id %}">
+                Conversation with {{ conversation.sender.username }}: 
+                {{ conversation.content|truncatechars:50 }}
+                ({{ conversation.replies.count }} replies)
+            </a>
+        </li>
+        {% empty %}
+        <li>No conversations</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
