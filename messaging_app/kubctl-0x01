@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Scale to 3 replicas
 kubectl scale deployment messaging-app --replicas=3
 
