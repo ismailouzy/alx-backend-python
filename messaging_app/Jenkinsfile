@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+    tools {
+        python 'Python 3'
+    }
+    environment {
+        VENV = 'venv'
+    }
+    stages {
+        stage('Clone repo') {
+            steps {
+                git credentialsId: 'github-credentials-id', url: 'https://github.com/ismailouzy/alx-backend-python.git'
+            }
+        }
+        stage('Install dependencies') {
+            steps {
+                sh 'python -m venv $VENV'
+                sh './$VENV/bin/pip install -r messaging_app/requirements.txt'
+            }
+        }
+        stage('Run Tests') {
+            steps {
+                sh './$VENV/bin/pytest messaging_app/tests/ --junitxml=report.xml'
+                junit 'report.xml'
+            }
+        }
+    }
+}
+
